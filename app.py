@@ -24,7 +24,7 @@ st.markdown(
     <style>
     :root {
         --bg-main: #159921;
-        --bg-card: #FFFFFF;
+        --bg-card: #B9C9B9;
         --text-main: #FFFFFF;
         --primary: #2E7D32;
         --primary-dark: #1B5E20;
