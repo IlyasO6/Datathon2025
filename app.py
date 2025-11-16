@@ -192,6 +192,8 @@ CLASSIF_JSON = ROOT / "classification_report.json"
 METRICS_CSV = ROOT / "metrics.csv"
 ROC_JSON = ROOT / "roc_curve_data.json"
 ARTIFACTS_XGB_DIR = ROOT / "artifacts_xgb"
+#  Edited
+STICKMAN_IMG = ROOT / "stickman.png"
 
 
 @st.cache_data(show_spinner=False)
@@ -238,15 +240,15 @@ with st.sidebar:
 	opcion = st.radio(
 		"Secciones",
 		(
-			"Resultados (User-Friendly)",
-			"Análisis Técnico (SHAP)",
-			"Validez del Modelo (Métricas)"
+			"Resultados ",
+			"Análisis Técnico",
+			"Validez del Modelo"
 		)
 	)
 # ----------------------------
-# Tab 1: Resultados (User-Friendly)
+# Tab 1: Resultados 
 # ----------------------------
-if opcion == "Resultados (User-Friendly)":
+if opcion == "Resultados ":
 	st.subheader("Gráficos SHAP")
 
 	missing = []
@@ -279,12 +281,19 @@ if opcion == "Resultados (User-Friendly)":
 		st.pyplot(fig2, use_container_width=True)
 		plt.close(fig2)
 
+	#  Edited
+	st.markdown("### Ejemplo ilustrativo")
+	if STICKMAN_IMG.exists():
+		st.image(str(STICKMAN_IMG), caption="Representación conceptual", use_container_width=True)
+	else:
+		st.info("No se encontró 'stickman.png' en el directorio raíz.")
+
 
 # ----------------------------
-# Tab 2: Análisis Técnico (SHAP)
+# Tab 2: Análisis Técnico
 # ----------------------------
-elif opcion == "Análisis Técnico (SHAP)":
-	st.subheader("Análisis Técnico (SHAP)")
+elif opcion == "Análisis Técnico":
+	st.subheader("Análisis Técnico")
 
 	artifacts_dir = ARTIFACTS_XGB_DIR
 	if not artifacts_dir.exists():
@@ -299,18 +308,20 @@ elif opcion == "Análisis Técnico (SHAP)":
 
 		# Listado de dependence plots
 		dep_pngs = sorted([p for p in artifacts_dir.glob("*.png") if "dependence" in p.stem.lower()])
+		
 		if not dep_pngs:
 			st.info("No se encontraron gráficos de dependencia SHAP en artifacts_xgb.")
 		else:
-			options = [p.name for p in dep_pngs]
+			options = [p.name.replace("shap_dependence_","").replace(".png","") for p in dep_pngs]
 			selected = st.selectbox("Selecciona un SHAP dependence plot", options=options, index=0)
+			selected = "shap_dependence_" + selected + ".png"
 			st.image(str(artifacts_dir / selected), caption=selected, use_container_width=True)
 
 
 # ----------------------------
-# Tab 3: Validez del Modelo (Métricas)
+# Tab 3: Validez del Modelo
 # ----------------------------
-elif opcion == "Validez del Modelo (Métricas)":
+elif opcion == "Validez del Modelo":
 
 	#  Edited
 	# Layout en dos columnas: más espacio para la ROC
