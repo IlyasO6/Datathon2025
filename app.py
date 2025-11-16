@@ -20,73 +20,111 @@ st.set_page_config(page_title="Dashboard de Modelo", layout="wide")
 # Estilos (Tema Verde Ecológico)
 # ----------------------------
 st.markdown(
-	"""
-	<style>
-	  :root {
-		--bg-main: #06C214; /* fondo principal */
-		--bg-card: #139E1F; /* contenedores */
-		--text-main: #EBEBEB; /* texto principal */
-		--primary: #19BF1C; /* verde ecológico */
-		--primary-dark: #0B4D0D; /* hover */
-		}
-		/* Header background card */
-	  .bg-card {
-		background: linear-gradient(135deg, var(--bg-card) 0%, #0f7f18 100%);
-		border-radius: 12px;
-		padding: 1.25rem 1.5rem;
-		margin-bottom: 1rem;
-		box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-		border: 1px solid rgba(0,0,0,0.06);
-	  }
-	  .bg-card h1, .bg-card p {
-		margin: 0;
-		color: var(--text-main);
-	  }
+    """
+    <style>
+    :root {
+        --bg-main: #159921;
+        --bg-card: #FFFFFF;
+        --text-main: #FFFFFF;
+        --primary: #2E7D32;
+        --primary-dark: #1B5E20;
+        --primary-soft: #A5D6A7;
+        --accent: #FBC02D;
+    }
 
-	  html, body, [data-testid="stAppViewContainer"] {
-		background: var(--bg-main) !important;
-		color: var(--text-main) !important;
-	  }
+    /* Fondo general de la app */
+    html, body, [data-testid="stAppViewContainer"] {
+        background: var(--bg-main) !important;
+        color: var(--text-main) !important;
+    }
 
-	  h1, h2, h3, h4, h5, h6 { color: var(--text-main) !important; }
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background: #FFFFFF !important;
+        border-right: 1px solid rgba(0,0,0,0.06);
+    }
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 {
+        color: var(--primary-dark) !important;
+    }
 
-	  /* Tarjetas / contenedores personalizados */
-	  .card {
-		background: var(--bg-card);
-		border-radius: 10px;
-		box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-		padding: 1rem 1.25rem;
-		border: 1px solid rgba(0,0,0,0.04);
-	  }
+    /* Títulos */
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--text-main) !important;
+    }
 
-	  /* Botones */
-	  div.stButton > button,
-	  .stDownloadButton > button,
-	  .st-emotion-cache-1vt4y43 { /* algunos temas usan estas clases dinámicas */
-		background-color: var(--primary) !important;
-		color: #188523;
-		border: #0B6314;
-	  }
-	  div.stButton > button:hover,
-	  .stDownloadButton > button:hover {
-		background-color: var(--primary-dark) !important;
-	  }
+    /* Header principal tipo card */
+    .bg-card {
+        background: linear-gradient(90deg, #1B5E20, #33691E);
+        padding: 1.75rem 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+        border-radius: 12px;
+        border: none;
+    }
+    .bg-card h1 {
+        margin: 0;
+        color: #FFFFFF;
+        font-size: 2.6rem;
+        font-weight: 700;
+    }
+    .bg-card p {
+        margin-top: 0.4rem;
+        margin-bottom: 0;
+        color: #E8F5E9;
+        font-size: 1rem;
+    }
 
-	  /* Select / inputs */
-	  .stSelectbox div[data-baseweb="select"] > div {
-		border-radius: 10px !important;
-		border-color: rgba(0,0,0,0.1) !important;
-	  }
+    /* Tarjetas / contenedores */
+    .card {
+        background: var(--bg-card);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(15, 32, 24, 0.08);
+        padding: 1.2rem 1.4rem;
+        border: 1px solid rgba(0,0,0,0.03);
+    }
 
-	  /* Métrica destacada */
-	  [data-testid="stMetricValue"] {
-		color: var(--primary) !important;
-	  }
-	</style>
-	""",
-	unsafe_allow_html=True,
+    /* Botones */
+    div.stButton > button,
+    .stDownloadButton > button,
+    .st-emotion-cache-1vt4y43 {
+        background-color: var(--primary) !important;
+        color: #FFFFFF !important;
+        border-radius: 999px !important;
+        border: none !important;
+        padding: 0.45rem 1.2rem;
+        font-weight: 600;
+    }
+    div.stButton > button:hover,
+    .stDownloadButton > button:hover {
+        background-color: var(--primary-dark) !important;
+    }
+
+    /* Select / inputs */
+    .stSelectbox div[data-baseweb="select"] > div {
+        border-radius: 10px !important;
+        border-color: rgba(0,0,0,0.10) !important;
+        background-color: #FFFFFF !important;
+    }
+
+    /* Métrica destacada */
+    [data-testid="stMetricValue"] {
+        color: var(--primary) !important;
+        font-weight: 700 !important;
+    }
+
+    /* Pequeño acento en enlaces */
+    a {
+        color: var(--primary) !important;
+    }
+    a:hover {
+        color: var(--accent) !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
-
 
 # ----------------------------
 # Utilidades de carga y helpers
