@@ -42,7 +42,7 @@ st.markdown(
 
     /* Sidebar */
     [data-testid="stSidebar"] {
-        background: #FFFFFF !important;
+        background: #BCCCBC !important;
         border-right: 1px solid rgba(0,0,0,0.06);
     }
     [data-testid="stSidebar"] h1,
@@ -124,6 +124,8 @@ st.markdown(
     a:hover {
         color: var(--accent) !important;
     }
+
+	
     </style>
     """,
     unsafe_allow_html=True,
@@ -195,9 +197,11 @@ CLASSIF_JSON = ROOT / "classification_report.json"
 METRICS_CSV = ROOT / "metrics.csv"
 ROC_JSON = ROOT / "roc_curve_data.json"
 ARTIFACTS_XGB_DIR = ROOT / "artifacts_xgb"
-#  Edited
 BEESWARM_DIBUJITO = ROOT / "pngs/beeswarm_dibujito.png"
 #  Edited
+BARPLOT_EXPLICACION_BLANCO = ROOT / "pngs/barplot_explicacion_blanco.png"
+#  Edited
+EXPLICACION_IMAGEN_BLANCO = ROOT / "pngs/explicacion_imagen_blanco.png"
 # Safeguard: define SHAP summary plot persistence helpers if missing (avoids NameError)
 if "ensure_shap_summary_pngs" not in globals():
 	def _save_shap_summary_plot(shap_values: np.ndarray, X: pd.DataFrame, plot_type: str, out_path: Path, figsize=(10, 4)):
@@ -404,23 +408,23 @@ if opcion == "Resultados ":
 	col1, col2 = st.columns(2)
 	with col1:
 		st.image(str(bees_png), use_container_width=True)
-		#  Edited: beeswarm_dibujito centrado en la misma columna del Beeswarm
+		#  Edited: beeswarm_dibujito centrado y más grande en la misma columna del Beeswarm
 		if BEESWARM_DIBUJITO.exists():
-			_left, _center, _right = st.columns([1, 2, 1])
-			with _center:
+			#  Edited
+			_l1, _c1, _r1 = st.columns([0.25, 2.5, 0.25])
+			with _c1:
 				st.image(str(BEESWARM_DIBUJITO), use_container_width=True)
 		else:
 			st.info("No se encontró 'beeswarm_dibujito.png' en el directorio raíz.")
 	with col2:
 		st.image(str(bar_png), use_container_width=True)
-
-	#  Edited: se elimina el bloque previo que centraba beeswarm_dibujito a nivel de página
-	# if BEESWARM_DIBUJITO.exists():
-	#     left, mid, right = st.columns([1,2,1])
-	#     with mid:
-	#         st.image(str(BEESWARM_DIBUJITO), use_container_width=True)
-	# else:
-	#     st.info("No se encontró 'beeswarm_dibujito.png' en el directorio raíz.")
+		#  Edited: barplot_explicacion_blanco centrado y más grande en la misma columna del Bar Plot
+		if BARPLOT_EXPLICACION_BLANCO.exists():
+			_l2, _c2, _r2 = st.columns([0.25, 4.5, 0.25])
+			with _c2:
+				st.image(str(BARPLOT_EXPLICACION_BLANCO), use_container_width=True)
+		else:
+			st.info("No se encontró 'barplot_explicacion_blanco.png'.")
 
 	# Ejemplo ilustrativo
 	st.markdown("### Ejemplo ilustrativo")
@@ -607,12 +611,19 @@ elif opcion == "Explicación":
 	)
 	if not ok:
 		st.info("No se pudo renderizar la explicación SHAP para esta muestra. Verifica la versión de SHAP y los artefactos.")
+	#  Edited
+	if EXPLICACION_IMAGEN_BLANCO.exists():
+		_lx, _cx, _rx = st.columns([0.25, 3.5, 0.25])
+		with _cx:
+			st.image(str(EXPLICACION_IMAGEN_BLANCO), use_container_width=True)
+	else:
+		st.info("No se encontró 'explicacion_imagen_blanco.png'.")
 
 	# ----------------------------
 	# Análisis del individuo (Gemini) con fondo verde
 	# ----------------------------
 	st.divider()
-	st.markdown("### 🤖 Análisis del Individuo por IA (Gemini)")
+	st.markdown("### Análisis del Individuo con LLM")
 
 	# Cargar clase real si existe
 	Y_TEST_CSV = ROOT / "y_test.csv"
