@@ -109,8 +109,9 @@ st.markdown(
     }
 
     /* Métrica destacada */
+    /*  Edited */
     [data-testid="stMetricValue"] {
-        color: var(--primary) !important;
+        color: #FFFFFF !important;
         font-weight: 700 !important;
     }
 
@@ -192,6 +193,41 @@ CLASSIF_JSON = ROOT / "classification_report.json"
 METRICS_CSV = ROOT / "metrics.csv"
 ROC_JSON = ROOT / "roc_curve_data.json"
 ARTIFACTS_XGB_DIR = ROOT / "artifacts_xgb"
+#  Edited
+# Safeguard: define SHAP summary plot persistence helpers if missing (avoids NameError)
+if "ensure_shap_summary_pngs" not in globals():
+	def _save_shap_summary_plot(shap_values: np.ndarray, X: pd.DataFrame, plot_type: str, out_path: Path, figsize=(10, 4)):
+		out_path.parent.mkdir(parents=True, exist_ok=True)
+		fig = plt.figure(figsize=figsize)
+		shap.summary_plot(shap_values, X, plot_type=plot_type, show=False)
+		fig.tight_layout()
+		fig.savefig(str(out_path), dpi=200, bbox_inches="tight")
+		plt.close(fig)
+
+	def ensure_shap_summary_pngs(shap_values: np.ndarray, X: pd.DataFrame):
+		"""
+		Genera y guarda summary plots (beeswarm y bar) solo si no existen
+		o si los artefactos son más antiguos que las fuentes (X_test.csv / shap_values.pkl).
+		Devuelve rutas a los PNGs.
+		"""
+		bees_path = ARTIFACTS_XGB_DIR / "summary_beeswarm.png"
+		bar_path = ARTIFACTS_XGB_DIR / "summary_bar.png"
+
+		src_mtime = 0.0
+		if SHAP_VALUES_PKL.exists():
+			src_mtime = max(src_mtime, SHAP_VALUES_PKL.stat().st_mtime)
+		if X_TEST_CSV.exists():
+			src_mtime = max(src_mtime, X_TEST_CSV.stat().st_mtime)
+
+		def needs_update(p: Path) -> bool:
+			return (not p.exists()) or (src_mtime and p.stat().st_mtime < src_mtime)
+
+		if needs_update(bees_path):
+			_save_shap_summary_plot(shap_values, X, plot_type="dot", out_path=bees_path, figsize=(10, 4))
+		if needs_update(bar_path):
+			_save_shap_summary_plot(shap_values, X, plot_type="bar", out_path=bar_path, figsize=(10, 4))
+
+		return bees_path, bar_path
 
 
 @st.cache_data(show_spinner=False)
@@ -223,6 +259,20 @@ def load_shap_values():
 		vals = vals.values
 	return np.asarray(vals)
 
+def get_expected_base_value(explainer) -> float:
+	"""
+	Obtiene el expected_value (base value) para la clase positiva si es binario.
+	"""
+	ev = getattr(explainer, "expected_value", None)
+	if ev is None:
+		return 0.0
+	try:
+		# casos: float, list/tuple/np.ndarray por clases
+		if isinstance(ev, (list, tuple, np.ndarray)):
+			return float(ev[1] if len(ev) > 1 else ev[0])
+		return float(ev)
+	except Exception:
+		return 0.0
 
 # ----------------------------
 # Título principal
@@ -235,18 +285,22 @@ def load_shap_values():
 # ---- MENÚ LATERAL ----
 with st.sidebar:
 	st.title("Dashboard")
+	#  Edited
 	opcion = st.radio(
 		"Secciones",
 		(
-			"Resultados (User-Friendly)",
-			"Análisis Técnico (SHAP)",
-			"Validez del Modelo (Métricas)"
+			"Resultados ",
+			"Análisis Técnico",
+			"Validez del Modelo",
+			"Explicación"
 		)
 	)
+
 # ----------------------------
-# Tab 1: Resultados (User-Friendly)
+# Tab 1: Resultados 
 # ----------------------------
-if opcion == "Resultados (User-Friendly)":
+#  Edited
+if opcion == "Resultados ":
 	st.subheader("Gráficos SHAP")
 
 	missing = []
@@ -261,30 +315,30 @@ if opcion == "Resultados (User-Friendly)":
 	X_test = load_x_test()
 	shap_values = load_shap_values()
 
+	# Generar una vez y reutilizar PNGs
+	bees_png, bar_png = ensure_shap_summary_pngs(shap_values, X_test)
+
 	col1, col2 = st.columns(2)
-
 	with col1:
-		# Beeswarm
 		st.markdown("**Beeswarm**")
-		fig1 = plt.figure(figsize=(10, 4))
-		shap.summary_plot(shap_values, X_test, plot_type="dot", show=False)
-		st.pyplot(fig1, use_container_width=True)
-		plt.close(fig1)
-
+		st.image(str(bees_png), use_container_width=True)
 	with col2:
-		# Bar
 		st.markdown("**Importancia (Bar Plot)**")
-		fig2 = plt.figure(figsize=(10, 4))
-		shap.summary_plot(shap_values, X_test, plot_type="bar", show=False)
-		st.pyplot(fig2, use_container_width=True)
-		plt.close(fig2)
+		st.image(str(bar_png), use_container_width=True)
 
+	# Ejemplo ilustrativo
+	st.markdown("### Ejemplo ilustrativo")
+	STICKMAN_IMG = ROOT / "stickman.png"	
+	if STICKMAN_IMG.exists():
+		st.image(str(STICKMAN_IMG), caption="Representación conceptual", use_container_width=True)
+	else:
+		st.info("No se encontró 'stickman.png' en el directorio raíz.")
 
 # ----------------------------
-# Tab 2: Análisis Técnico (SHAP)
+# Tab 2: Análisis Técnico
 # ----------------------------
-elif opcion == "Análisis Técnico (SHAP)":
-	st.subheader("Análisis Técnico (SHAP)")
+elif opcion == "Análisis Técnico":
+	st.subheader("Análisis Técnico")
 
 	artifacts_dir = ARTIFACTS_XGB_DIR
 	if not artifacts_dir.exists():
@@ -299,25 +353,23 @@ elif opcion == "Análisis Técnico (SHAP)":
 
 		# Listado de dependence plots
 		dep_pngs = sorted([p for p in artifacts_dir.glob("*.png") if "dependence" in p.stem.lower()])
+		
 		if not dep_pngs:
 			st.info("No se encontraron gráficos de dependencia SHAP en artifacts_xgb.")
 		else:
-			options = [p.name for p in dep_pngs]
+			options = [p.name.replace("shap_dependence_","").replace(".png","") for p in dep_pngs]
 			selected = st.selectbox("Selecciona un SHAP dependence plot", options=options, index=0)
+			selected = "shap_dependence_" + selected + ".png"
 			st.image(str(artifacts_dir / selected), caption=selected, use_container_width=True)
 
-
 # ----------------------------
-# Tab 3: Validez del Modelo (Métricas)
+# Tab 3: Validez del Modelo
 # ----------------------------
-elif opcion == "Validez del Modelo (Métricas)":
-
-	#  Edited
+elif opcion == "Validez del Modelo":
 	# Layout en dos columnas: más espacio para la ROC
 	col_metric, col_roc = st.columns([1, 2.2])
 
 	with col_metric:
-		# Título estilizado (blanco y un poco más grande)
 		st.markdown(
 			"<h4 style='color:#FFFFFF; margin:0 0 0.5rem 0;'>F1-Score </h4>",
 			unsafe_allow_html=True
@@ -334,13 +386,11 @@ elif opcion == "Validez del Modelo (Métricas)":
 				except Exception:
 					f1_weighted = None
 			if f1_weighted is not None:
-				# Valor sin etiqueta (el título está arriba)
 				st.metric(label="", value=f"{f1_weighted:.3f}")
 			else:
 				st.info("No se encontró el F1-Score (Weighted Avg) en metrics.csv")
 
 	with col_roc:
-		# Título estilizado (blanco y un poco más grande)
 		st.markdown(
 			"<h4 style='color:#FFFFFF; margin:0 0 0.5rem 0;'>Curva ROC</h4>",
 			unsafe_allow_html=True
@@ -376,3 +426,117 @@ elif opcion == "Validez del Modelo (Métricas)":
 				legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
 			)
 			st.plotly_chart(fig_roc, use_container_width=True)
+
+# ----------------------------
+# Tab 4: Explicación
+# ----------------------------
+elif opcion == "Explicación":
+	st.subheader("Explicación por muestra")
+
+	# Requisitos
+	missing = []
+	for p in [MODEL_PKL, EXPLAINER_PKL, SHAP_VALUES_PKL, X_TEST_CSV]:
+		if not p.exists():
+			missing.append(str(p))
+	if missing:
+		st.error("Faltan archivos necesarios: " + ", ".join(missing))
+		st.stop()
+
+	model = load_model()
+	explainer = load_explainer()
+	X_test = load_x_test()
+	shap_values = load_shap_values()
+
+	# Selector de fila (por id si existe)
+	id_series = pick_sample_id_options(X_test)
+	options = id_series.tolist()
+	selected_id = st.selectbox("Selecciona ID de muestra", options=options, index=0)
+
+	# Posición de la muestra
+	try:
+		if "id" in X_test.columns:
+			sample_pos = int(X_test.index[X_test["id"] == selected_id][0])
+		else:
+			sample_pos = int(selected_id)
+	except Exception:
+		sample_pos = 0
+	sample_pos = int(np.clip(sample_pos, 0, len(X_test) - 1))
+
+	# Datos de la muestra
+	x_row = X_test.iloc[sample_pos:sample_pos + 1]  # DataFrame de 1 fila
+	x_row_flat = X_test.iloc[sample_pos]            # Serie para etiquetas
+	sv_row = np.asarray(shap_values[sample_pos])
+
+	# Predicción
+	pred_prob = None
+	pred_cls = None
+	try:
+		if hasattr(model, "predict_proba"):
+			pred_prob = float(model.predict_proba(x_row)[0, 1])
+		elif hasattr(model, "decision_function"):
+			score = float(model.decision_function(x_row)[0])
+			pred_prob = float(1.0 / (1.0 + np.exp(-score)))
+		else:
+			pred_prob = float(model.predict(x_row)[0])
+		pred_cls = int(pred_prob >= 0.5)
+	except Exception:
+		pred_prob, pred_cls = None, None
+
+	# Mostrar predicción
+	c1, c2 = st.columns([1, 2])
+	with c1:
+		st.markdown("**Predicción (probabilidad clase positiva):**")
+		if pred_prob is not None:
+			st.metric(label="", value=f"{pred_prob:.3f}")
+		else:
+			st.info("No se pudo calcular la probabilidad.")
+	with c2:
+		st.markdown("**Clase predicha (@0.5):**")
+		if pred_cls is not None:
+			st.metric(label="", value=str(pred_cls))
+		else:
+			st.info("No se pudo calcular la clase.")
+
+	st.divider()
+
+	# Explicación SHAP per-instance (waterfall preferido; fallback a force plot)
+	base_val = get_expected_base_value(explainer)
+	st.markdown("**Explicación de la predicción (SHAP):**")
+
+	# Intentar waterfall con shap.Explanation
+	rendered = False
+	try:
+		expl = shap.Explanation(
+			values=sv_row,
+			base_values=base_val,
+			data=x_row_flat.values,
+			feature_names=list(X_test.columns),
+		)
+		fig = plt.figure(figsize=(11, 5))
+		try:
+			# API moderna
+			shap.plots.waterfall(expl, max_display=15, show=False)
+		except Exception:
+			# API legacy
+			shap.waterfall_plot(expl, max_display=15, show=False)  # type: ignore
+		st.pyplot(fig, use_column_width=True)
+		plt.close(fig)
+		rendered = True
+	except Exception:
+		rendered = False
+
+	# Fallback: force plot (matplotlib)
+	if not rendered:
+		try:
+			fig = plt.figure(figsize=(11, 2.6))
+			shap.force_plot(
+				base_val, sv_row, x_row_flat, matplotlib=True, show=False
+			)
+			st.pyplot(fig, use_column_width=True)
+			plt.close(fig)
+			rendered = True
+		except Exception:
+			pass
+
+	if not rendered:
+		st.info("No se pudo renderizar la explicación SHAP para esta muestra. Verifica la versión de SHAP y los artefactos.")
