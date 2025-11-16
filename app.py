@@ -24,11 +24,11 @@ st.markdown(
 	"""
 	<style>
 	  :root {
-		--bg-main: #F8FFF4; /* fondo principal */
-		--bg-card: #FFFFFF; /* contenedores */
-		--text-main: #1E3923; /* texto principal */
-		--primary: #4CAF50; /* verde ecológico */
-		--primary-dark: #388E3C; /* hover */
+		--bg-main: #06C214; /* fondo principal */
+		--bg-card: #139E1F; /* contenedores */
+		--text-main: #EBEBEB; /* texto principal */
+		--primary: #19BF1C; /* verde ecológico */
+		--primary-dark: #0B4D0D; /* hover */
 	  }
 
 	  html, body, [data-testid="stAppViewContainer"] {
@@ -52,8 +52,8 @@ st.markdown(
 	  .stDownloadButton > button,
 	  .st-emotion-cache-1vt4y43 { /* algunos temas usan estas clases dinámicas */
 		background-color: var(--primary) !important;
-		color: #fff !important;
-		border: none !important;
+		color: #188523;
+		border: #0B6314;
 	  }
 	  div.stButton > button:hover,
 	  .stDownloadButton > button:hover {
