@@ -1,4 +1,3 @@
-
 import json
 import pickle
 from pathlib import Path
@@ -176,10 +175,8 @@ def load_shap_values():
 # ----------------------------
 # Título principal
 # ----------------------------
-st.markdown("<div class='card'>", unsafe_allow_html=True)
 st.title("Dashboard de Modelo")
 st.write("Explora resultados, interpretabilidad y métricas del modelo.")
-st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ----------------------------
@@ -196,7 +193,6 @@ tab_user, tab_shap, tab_metrics = st.tabs([
 # Tab 1: Resultados (User-Friendly)
 # ----------------------------
 with tab_user:
-	st.markdown("<div class='card'>", unsafe_allow_html=True)
 	st.subheader("Impacto de variables por muestra")
 
 	missing = []
@@ -205,7 +201,6 @@ with tab_user:
 			missing.append(str(p))
 	if missing:
 		st.error("Faltan archivos necesarios: " + ", ".join(missing))
-		st.markdown("</div>", unsafe_allow_html=True)
 		st.stop()
 
 	X_test = load_x_test()
@@ -256,14 +251,11 @@ with tab_user:
 			f"La variable '{feat}' está {'aumentando' if sv>0 else 'disminuyendo' if sv<0 else 'sin cambiar'} ({emo}) la probabilidad de la clase positiva."
 		)
 
-	st.markdown("</div>", unsafe_allow_html=True)
-
 
 # ----------------------------
 # Tab 2: Análisis Técnico (SHAP)
 # ----------------------------
 with tab_shap:
-	st.markdown("<div class='card'>", unsafe_allow_html=True)
 	st.subheader("Gráficos SHAP")
 
 	missing = []
@@ -272,7 +264,6 @@ with tab_shap:
 			missing.append(str(p))
 	if missing:
 		st.error("Faltan archivos necesarios: " + ", ".join(missing))
-		st.markdown("</div>", unsafe_allow_html=True)
 		st.stop()
 
 	_ = load_explainer()  # cargado aunque no se use estrictamente para summary_plot
@@ -293,14 +284,11 @@ with tab_shap:
 	st.pyplot(fig2, use_container_width=True)
 	plt.close(fig2)
 
-	st.markdown("</div>", unsafe_allow_html=True)
-
 
 # ----------------------------
 # Tab 3: Validez del Modelo (Métricas)
 # ----------------------------
 with tab_metrics:
-	st.markdown("<div class='card'>", unsafe_allow_html=True)
 	st.subheader("Métricas de Rendimiento")
 
 	df_metrics = load_metrics_df()
@@ -358,5 +346,3 @@ with tab_metrics:
 			legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
 		)
 		st.plotly_chart(fig_roc, use_container_width=True)
-
-	st.markdown("</div>", unsafe_allow_html=True)
