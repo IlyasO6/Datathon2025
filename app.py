@@ -201,7 +201,7 @@ BEESWARM_DIBUJITO = ROOT / "pngs/beeswarm_dibujito.png"
 #  Edited
 BARPLOT_EXPLICACION_BLANCO = ROOT / "pngs/barplot_explicacion_blanco.png"
 #  Edited
-EXPLICACION_IMAGEN_BLANCO = ROOT / "pngs/explicacion_imagen_blanco.png"
+EXPLICACION_IMAGEN_BLANCO = ROOT / "pngs/explicacion_imagen_correcto.png"
 # Safeguard: define SHAP summary plot persistence helpers if missing (avoids NameError)
 if "ensure_shap_summary_pngs" not in globals():
 	def _save_shap_summary_plot(shap_values: np.ndarray, X: pd.DataFrame, plot_type: str, out_path: Path, figsize=(10, 4)):
@@ -371,7 +371,7 @@ def render_instance_explanation(sv_row: np.ndarray, x_row_flat: pd.Series, featu
 # ----------------------------
 # ---- MENÚ LATERAL ----
 with st.sidebar:
-	st.title("Dashboard")
+	st.title("Análisis de oportunidades")
 	#  Edited
 	opcion = st.radio(
 		"Secciones",

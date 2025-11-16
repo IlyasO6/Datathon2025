@@ -86,7 +86,8 @@ Se te presenta un individuo con las siguientes características:
 
 El modelo predice:
 - Probabilidad de clase positiva: {predicted_prob:.3f}
-- Clase predicha: {predicted_class}"""
+- Clase predicha: {predicted_class}
+- Clase real: {actual_class if actual_class is not None else 'Desconocida'}"""
         
         if actual_class is not None:
             prompt += f"\n- Clase real: {actual_class}"
@@ -101,7 +102,8 @@ El modelo predice:
 3. Destaque los factores de riesgo o protección más relevantes
 4. Si la predicción es incorrecta, sugiere posibles razones
 
-Usa un tono profesional pero accesible. Responde en español."""
+Usa un tono profesional pero accesible. Es importante que alguien que no tenga
+conocimiento técnico pueda entenderlo. Se lo más breve posible. Responde en español."""
 
         # Generar respuesta
         response = model.generate_content(prompt)
