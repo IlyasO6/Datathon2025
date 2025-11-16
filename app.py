@@ -274,6 +274,85 @@ def get_expected_base_value(explainer) -> float:
 	except Exception:
 		return 0.0
 
+#  Edited
+def render_instance_explanation(sv_row: np.ndarray, x_row_flat: pd.Series, feature_names: list[str], base_val: float) -> bool:
+	"""
+	Intenta renderizar una explicación por instancia con varios fallbacks.
+	1) shap.plots.waterfall (API moderna)
+	2) shap.waterfall_plot (legacy)
+	3) shap.plots.bar (por instancia)
+	4) Barra horizontal custom con Matplotlib
+	Devuelve True si se renderizó correctamente.
+	"""
+	# Asegurar tipos
+	try:
+		values = np.asarray(sv_row).astype(float)
+	except Exception:
+		return False
+
+	try:
+		data_vals = np.asarray(x_row_flat.values, dtype=object)
+	except Exception:
+		data_vals = np.asarray(x_row_flat.values)
+
+	names = list(feature_names)
+
+	# 1) Waterfall (API moderna)
+	try:
+		expl = shap.Explanation(values=values, base_values=float(base_val), data=data_vals, feature_names=names)
+		plt.figure(figsize=(11, 5))
+		# Nota: API moderna no acepta 'show' param
+		shap.plots.waterfall(expl, max_display=15)
+		st.pyplot(plt.gcf(), use_container_width=True)
+		plt.close()
+		return True
+	except Exception:
+		pass
+
+	# 2) Waterfall legacy
+	try:
+		expl = shap.Explanation(values=values, base_values=float(base_val), data=data_vals, feature_names=names)
+		plt.figure(figsize=(11, 5))
+		# Algunas versiones usan la función legacy
+		shap.waterfall_plot(expl, max_display=15)  # type: ignore
+		st.pyplot(plt.gcf(), use_container_width=True)
+		plt.close()
+		return True
+	except Exception:
+		pass
+
+	# 3) Bar plot (por instancia)
+	try:
+		expl = shap.Explanation(values=values, base_values=float(base_val), data=data_vals, feature_names=names)
+		plt.figure(figsize=(11, 5))
+		shap.plots.bar(expl, max_display=15)  # sin 'show'
+		st.pyplot(plt.gcf(), use_container_width=True)
+		plt.close()
+		return True
+	except Exception:
+		pass
+
+	# 4) Fallback custom: barras horizontales de las top contribuciones
+	try:
+		topk = 15
+		idx_sorted = np.argsort(np.abs(values))[::-1][:topk]
+		top_vals = values[idx_sorted]
+		top_names = [names[i] for i in idx_sorted]
+
+		plt.figure(figsize=(11, 5))
+		colors = ["#43A047" if v >= 0 else "#E53935" for v in top_vals]
+		ypos = np.arange(len(top_names))
+		plt.barh(ypos, top_vals, color=colors)
+		plt.yticks(ypos, top_names)
+		plt.gca().invert_yaxis()
+		plt.xlabel("SHAP value")
+		plt.title("Contribuciones principales (fallback)")
+		st.pyplot(plt.gcf(), use_container_width=True)
+		plt.close()
+		return True
+	except Exception:
+		return False
+
 # ----------------------------
 # Título principal
 # ----------------------------
@@ -499,44 +578,15 @@ elif opcion == "Explicación":
 
 	st.divider()
 
-	# Explicación SHAP per-instance (waterfall preferido; fallback a force plot)
+	# Explicación SHAP per-instance (waterfall preferido; fallback)
+	#  Edited
 	base_val = get_expected_base_value(explainer)
 	st.markdown("**Explicación de la predicción (SHAP):**")
-
-	# Intentar waterfall con shap.Explanation
-	rendered = False
-	try:
-		expl = shap.Explanation(
-			values=sv_row,
-			base_values=base_val,
-			data=x_row_flat.values,
-			feature_names=list(X_test.columns),
-		)
-		fig = plt.figure(figsize=(11, 5))
-		try:
-			# API moderna
-			shap.plots.waterfall(expl, max_display=15, show=False)
-		except Exception:
-			# API legacy
-			shap.waterfall_plot(expl, max_display=15, show=False)  # type: ignore
-		st.pyplot(fig, use_column_width=True)
-		plt.close(fig)
-		rendered = True
-	except Exception:
-		rendered = False
-
-	# Fallback: force plot (matplotlib)
-	if not rendered:
-		try:
-			fig = plt.figure(figsize=(11, 2.6))
-			shap.force_plot(
-				base_val, sv_row, x_row_flat, matplotlib=True, show=False
-			)
-			st.pyplot(fig, use_column_width=True)
-			plt.close(fig)
-			rendered = True
-		except Exception:
-			pass
-
-	if not rendered:
+	ok = render_instance_explanation(
+		sv_row=sv_row,
+		x_row_flat=x_row_flat,
+		feature_names=list(X_test.columns),
+		base_val=base_val,
+	)
+	if not ok:
 		st.info("No se pudo renderizar la explicación SHAP para esta muestra. Verifica la versión de SHAP y los artefactos.")
