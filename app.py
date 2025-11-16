@@ -213,69 +213,6 @@ with st.sidebar:
 # Tab 1: Resultados (User-Friendly)
 # ----------------------------
 if opcion == "Resultados (User-Friendly)":
-	st.subheader("Impacto de variables por muestra")
-
-	missing = []
-	for p in [X_TEST_CSV, SHAP_VALUES_PKL]:
-		if not p.exists():
-			missing.append(str(p))
-	if missing:
-		st.error("Faltan archivos necesarios: " + ", ".join(missing))
-		st.stop()
-
-	X_test = load_x_test()
-	shap_values = load_shap_values()  # [n_samples, n_features]
-
-	if shap_values.shape[0] != len(X_test):
-		st.warning(
-			f"El número de filas en shap_values ({shap_values.shape[0]}) no coincide con X_test ({len(X_test)})."
-		)
-
-	id_series = pick_sample_id_options(X_test)
-	id_options = id_series.tolist()
-	default_idx = 0
-	selected_id = st.selectbox("Selecciona ID de muestra", options=id_options, index=default_idx)
-
-	# Encontrar posición de la muestra
-	try:
-		# si hay columna id
-		if "id" in X_test.columns:
-			sample_pos = int(X_test.index[X_test["id"] == selected_id][0])
-		else:
-			sample_pos = int(selected_id)
-	except Exception:
-		sample_pos = 0
-
-	sample_pos = np.clip(sample_pos, 0, len(X_test) - 1)
-	x_row = X_test.iloc[sample_pos]
-	sv_row = shap_values[sample_pos]
-
-	# Top-5 por |SHAP|
-	abs_vals = np.abs(sv_row)
-	top_idx = np.argsort(-abs_vals)[:5]
-	cols = X_test.columns[top_idx]
-
-	st.write("Top 5 variables por impacto SHAP (por muestra seleccionada):")
-	for feat in cols:
-		c1, c2, c3 = st.columns([3, 2, 1])
-		val = x_row[feat]
-		sv = float(sv_row[X_test.columns.get_loc(feat)])
-		emo = emoji_for_shap(sv)
-		with c1:
-			st.markdown(f"**{feat}**")
-		with c2:
-			st.markdown(f"Valor: `{val}`")
-		with c3:
-			st.markdown(f"{emo}")
-		st.caption(
-			f"La variable '{feat}' está {'aumentando' if sv>0 else 'disminuyendo' if sv<0 else 'sin cambiar'} ({emo}) la probabilidad de la clase positiva."
-		)
-
-
-# ----------------------------
-# Tab 2: Análisis Técnico (SHAP)
-# ----------------------------
-elif opcion == "Análisis Técnico (SHAP)":
 	st.subheader("Gráficos SHAP")
 
 	missing = []
@@ -290,19 +227,31 @@ elif opcion == "Análisis Técnico (SHAP)":
 	X_test = load_x_test()
 	shap_values = load_shap_values()
 
-	# Beeswarm
-	st.markdown("**Beeswarm**")
-	fig1 = plt.figure(figsize=(10, 4))
-	shap.summary_plot(shap_values, X_test, plot_type="dot", show=False)
-	st.pyplot(fig1, use_container_width=True)
-	plt.close(fig1)
+	col1, col2 = st.columns(2)
 
-	# Bar
-	st.markdown("**Importancia (Bar Plot)**")
-	fig2 = plt.figure(figsize=(10, 4))
-	shap.summary_plot(shap_values, X_test, plot_type="bar", show=False)
-	st.pyplot(fig2, use_container_width=True)
-	plt.close(fig2)
+	with col1:
+		# Beeswarm
+		st.markdown("**Beeswarm**")
+		fig1 = plt.figure(figsize=(10, 4))
+		shap.summary_plot(shap_values, X_test, plot_type="dot", show=False)
+		st.pyplot(fig1, use_container_width=True)
+		plt.close(fig1)
+
+	with col2:
+		# Bar
+		st.markdown("**Importancia (Bar Plot)**")
+		fig2 = plt.figure(figsize=(10, 4))
+		shap.summary_plot(shap_values, X_test, plot_type="bar", show=False)
+		st.pyplot(fig2, use_container_width=True)
+		plt.close(fig2)
+
+
+# ----------------------------
+# Tab 2: Análisis Técnico (SHAP)
+# ----------------------------
+elif opcion == "Análisis Técnico (SHAP)":
+	st.subheader("Análisis Técnico (SHAP)")
+	st.info("Contenido movido a 'Resultados (User-Friendly)'.")
 
 
 # ----------------------------
