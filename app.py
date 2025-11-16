@@ -194,6 +194,8 @@ METRICS_CSV = ROOT / "metrics.csv"
 ROC_JSON = ROOT / "roc_curve_data.json"
 ARTIFACTS_XGB_DIR = ROOT / "artifacts_xgb"
 #  Edited
+BEESWARM_DIBUJITO = ROOT / "pngs/beeswarm_dibujito.png"
+#  Edited
 # Safeguard: define SHAP summary plot persistence helpers if missing (avoids NameError)
 if "ensure_shap_summary_pngs" not in globals():
 	def _save_shap_summary_plot(shap_values: np.ndarray, X: pd.DataFrame, plot_type: str, out_path: Path, figsize=(10, 4)):
@@ -380,7 +382,7 @@ with st.sidebar:
 # ----------------------------
 #  Edited
 if opcion == "Resultados ":
-	st.subheader("Gráficos SHAP")
+	st.subheader("Influencia GLOBAL por variable")
 
 	missing = []
 	for p in [EXPLAINER_PKL, SHAP_VALUES_PKL, X_TEST_CSV]:
@@ -399,17 +401,30 @@ if opcion == "Resultados ":
 
 	col1, col2 = st.columns(2)
 	with col1:
-		st.markdown("**Beeswarm**")
 		st.image(str(bees_png), use_container_width=True)
+		#  Edited: beeswarm_dibujito centrado en la misma columna del Beeswarm
+		if BEESWARM_DIBUJITO.exists():
+			_left, _center, _right = st.columns([1, 2, 1])
+			with _center:
+				st.image(str(BEESWARM_DIBUJITO), use_container_width=True)
+		else:
+			st.info("No se encontró 'beeswarm_dibujito.png' en el directorio raíz.")
 	with col2:
-		st.markdown("**Importancia (Bar Plot)**")
 		st.image(str(bar_png), use_container_width=True)
+
+	#  Edited: se elimina el bloque previo que centraba beeswarm_dibujito a nivel de página
+	# if BEESWARM_DIBUJITO.exists():
+	#     left, mid, right = st.columns([1,2,1])
+	#     with mid:
+	#         st.image(str(BEESWARM_DIBUJITO), use_container_width=True)
+	# else:
+	#     st.info("No se encontró 'beeswarm_dibujito.png' en el directorio raíz.")
 
 	# Ejemplo ilustrativo
 	st.markdown("### Ejemplo ilustrativo")
 	STICKMAN_IMG = ROOT / "stickman.png"	
 	if STICKMAN_IMG.exists():
-		st.image(str(STICKMAN_IMG), caption="Representación conceptual", use_container_width=True)
+		st.image(str(STICKMAN_IMG), use_container_width=True)
 	else:
 		st.info("No se encontró 'stickman.png' en el directorio raíz.")
 
