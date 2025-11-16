@@ -8,6 +8,8 @@ import plotly.graph_objects as go
 import shap
 import matplotlib.pyplot as plt
 import streamlit as st
+# Añadir import del chatbot (Gemini)
+from chatbot import analyze_individual
 
 
 # ----------------------------
@@ -605,3 +607,45 @@ elif opcion == "Explicación":
 	)
 	if not ok:
 		st.info("No se pudo renderizar la explicación SHAP para esta muestra. Verifica la versión de SHAP y los artefactos.")
+
+	# ----------------------------
+	# Análisis del individuo (Gemini) con fondo verde
+	# ----------------------------
+	st.divider()
+	st.markdown("### 🤖 Análisis del Individuo por IA (Gemini)")
+
+	# Cargar clase real si existe
+	Y_TEST_CSV = ROOT / "y_test.csv"
+	actual_class = None
+	if Y_TEST_CSV.exists():
+		try:
+			y_test = pd.read_csv(Y_TEST_CSV)
+			if len(y_test) > sample_pos:
+				actual_class = int(y_test.iloc[sample_pos, 0])
+		except Exception:
+			pass
+
+	with st.spinner("Generando análisis con IA..."):
+		analysis = analyze_individual(
+			sample_data=x_row_flat,
+			predicted_prob=pred_prob if pred_prob is not None else 0.0,
+			predicted_class=pred_cls if pred_cls is not None else 0,
+			actual_class=actual_class,
+			shap_values=sv_row,
+			top_features=5
+		)
+
+	# Contenedor con fondo verde igual al de la app y texto blanco
+	st.markdown(
+		f"""
+		<div class="card" style="
+			background: var(--bg-main);
+			color: var(--text-main);
+			border-left: 4px solid #B9C9B9;
+			padding: 1.25rem;
+		">
+			<p style="margin:0; white-space:pre-wrap;">{analysis}</p>
+		</div>
+		""",
+		unsafe_allow_html=True
+	)
