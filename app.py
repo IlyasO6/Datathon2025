@@ -65,7 +65,7 @@ st.markdown(
     }
     .bg-card h1 {
         margin: 0;
-        color: #FFFFFF;
+        color: #B9C9B9;
         font-size: 2.6rem;
         font-weight: 700;
     }
@@ -191,6 +191,7 @@ X_TEST_CSV = ROOT / "X_test.csv"
 CLASSIF_JSON = ROOT / "classification_report.json"
 METRICS_CSV = ROOT / "metrics.csv"
 ROC_JSON = ROOT / "roc_curve_data.json"
+ARTIFACTS_XGB_DIR = ROOT / "artifacts_xgb"
 
 
 @st.cache_data(show_spinner=False)
@@ -226,19 +227,14 @@ def load_shap_values():
 # ----------------------------
 # Título principal
 # ----------------------------
-st.markdown("""
-<div class="bg-card">
-    <h1>Dashboard; Posibles Oportunidades</h1>
-    <p>Explora resultados, interpretabilidad y métricas del modelo.</p>
-</div>
-""", unsafe_allow_html=True)
+
 
 # ----------------------------
 # Tabs principales
 # ----------------------------
 # ---- MENÚ LATERAL ----
 with st.sidebar:
-	st.title("Menú")
+	st.title("Dashboard")
 	opcion = st.radio(
 		"Secciones",
 		(
@@ -289,67 +285,94 @@ if opcion == "Resultados (User-Friendly)":
 # ----------------------------
 elif opcion == "Análisis Técnico (SHAP)":
 	st.subheader("Análisis Técnico (SHAP)")
-	st.info("Contenido movido a 'Resultados (User-Friendly)'.")
+
+	artifacts_dir = ARTIFACTS_XGB_DIR
+	if not artifacts_dir.exists():
+		st.error(f"No se encontró el directorio de artefactos: '{artifacts_dir}'.")
+	else:
+		# Mostrar Feature Importance primero
+		fi_path = artifacts_dir / "feature_importance_xgb.png"
+		if fi_path.exists():
+			st.image(str(fi_path), caption="Feature Importance (XGB)", use_container_width=True)
+		else:
+			st.info("No se encontró 'feature_importance_xgb.png' en artifacts_xgb.")
+
+		# Listado de dependence plots
+		dep_pngs = sorted([p for p in artifacts_dir.glob("*.png") if "dependence" in p.stem.lower()])
+		if not dep_pngs:
+			st.info("No se encontraron gráficos de dependencia SHAP en artifacts_xgb.")
+		else:
+			options = [p.name for p in dep_pngs]
+			selected = st.selectbox("Selecciona un SHAP dependence plot", options=options, index=0)
+			st.image(str(artifacts_dir / selected), caption=selected, use_container_width=True)
 
 
 # ----------------------------
 # Tab 3: Validez del Modelo (Métricas)
 # ----------------------------
 elif opcion == "Validez del Modelo (Métricas)":
-	st.subheader("Métricas de Rendimiento")
 
-	df_metrics = load_metrics_df()
-	if df_metrics.empty:
-		st.error("No se pudieron cargar las métricas. Verifica 'classification_report.json'.")
-	else:
-		# f1-score de weighted avg (manejar nombre de columna)
-		f1_col = "f1-score" if "f1-score" in df_metrics.columns else ("f1_score" if "f1_score" in df_metrics.columns else None)
-		f1_weighted = None
-		if f1_col and "weighted avg" in df_metrics.index:
-			try:
-				f1_weighted = float(df_metrics.loc["weighted avg", f1_col])
-			except Exception:
-				f1_weighted = None
-		if f1_weighted is not None:
-			st.metric(label="F1-Score (Weighted Avg)", value=f"{f1_weighted:.3f}")
+	#  Edited
+	# Layout en dos columnas: más espacio para la ROC
+	col_metric, col_roc = st.columns([1, 2.2])
+
+	with col_metric:
+		# Título estilizado (blanco y un poco más grande)
+		st.markdown(
+			"<h4 style='color:#FFFFFF; margin:0 0 0.5rem 0;'>F1-Score </h4>",
+			unsafe_allow_html=True
+		)
+		df_metrics = load_metrics_df()
+		if df_metrics.empty:
+			st.error("No se pudieron cargar las métricas. Verifica 'classification_report.json'.")
 		else:
-			st.info("No se encontró el F1-Score (Weighted Avg) en metrics.csv")
+			f1_col = "f1-score" if "f1-score" in df_metrics.columns else ("f1_score" if "f1_score" in df_metrics.columns else None)
+			f1_weighted = None
+			if f1_col and "weighted avg" in df_metrics.index:
+				try:
+					f1_weighted = float(df_metrics.loc["weighted avg", f1_col])
+				except Exception:
+					f1_weighted = None
+			if f1_weighted is not None:
+				# Valor sin etiqueta (el título está arriba)
+				st.metric(label="", value=f"{f1_weighted:.3f}")
+			else:
+				st.info("No se encontró el F1-Score (Weighted Avg) en metrics.csv")
 
-		st.write("Tabla completa de métricas")
-		st.dataframe(df_metrics, use_container_width=True)
-
-	st.divider()
-
-	# Curva ROC
-	st.subheader("Curva ROC")
-	if not ROC_JSON.exists():
-		st.error(f"No se encontró '{ROC_JSON}'.")
-	else:
-		with open(ROC_JSON, "r", encoding="utf-8") as f:
-			roc_data = json.load(f)
-		fpr = roc_data.get("fpr", [])
-		tpr = roc_data.get("tpr", [])
-		auc_val = roc_data.get("auc", None)
-
-		fig_roc = go.Figure()
-		fig_roc.add_trace(
-			go.Scatter(x=fpr, y=tpr, mode="lines", name="ROC", line=dict(color="#4CAF50", width=3))
+	with col_roc:
+		# Título estilizado (blanco y un poco más grande)
+		st.markdown(
+			"<h4 style='color:#FFFFFF; margin:0 0 0.5rem 0;'>Curva ROC</h4>",
+			unsafe_allow_html=True
 		)
-		fig_roc.add_trace(
-			go.Scatter(x=[0,1], y=[0,1], mode="lines", name="Azar", line=dict(color="#9E9E9E", dash="dash"))
-		)
-		title_txt = "Curva ROC"
-		if auc_val is not None:
-			try:
-				title_txt += f" — AUC={float(auc_val):.3f}"
-			except Exception:
-				pass
+		if not ROC_JSON.exists():
+			st.error(f"No se encontró '{ROC_JSON}'.")
+		else:
+			with open(ROC_JSON, "r", encoding="utf-8") as f:
+				roc_data = json.load(f)
+			fpr = roc_data.get("fpr", [])
+			tpr = roc_data.get("tpr", [])
+			auc_val = roc_data.get("auc", None)
 
-		fig_roc.update_layout(
-			title=title_txt,
-			xaxis_title="Tasa de Falsos Positivos",
-			yaxis_title="Tasa de Verdaderos Positivos",
-			template="plotly_white",
-			legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-		)
-		st.plotly_chart(fig_roc, use_container_width=True)
+			fig_roc = go.Figure()
+			fig_roc.add_trace(
+				go.Scatter(x=fpr, y=tpr, mode="lines", name="ROC", line=dict(color="#4CAF50", width=3))
+			)
+			fig_roc.add_trace(
+				go.Scatter(x=[0,1], y=[0,1], mode="lines", name="Azar", line=dict(color="#9E9E9E", dash="dash"))
+			)
+			title_txt = "Curva ROC"
+			if auc_val is not None:
+				try:
+					title_txt += f" — AUC={float(auc_val):.3f}"
+				except Exception:
+					pass
+
+			fig_roc.update_layout(
+				title=title_txt,
+				xaxis_title="Tasa de Falsos Positivos",
+				yaxis_title="Tasa de Verdaderos Positivos",
+				template="plotly_white",
+				legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+			)
+			st.plotly_chart(fig_roc, use_container_width=True)
