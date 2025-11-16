@@ -28,6 +28,19 @@ st.markdown(
 		--text-main: #EBEBEB; /* texto principal */
 		--primary: #19BF1C; /* verde ecológico */
 		--primary-dark: #0B4D0D; /* hover */
+		}
+		/* Header background card */
+	  .bg-card {
+		background: linear-gradient(135deg, var(--bg-card) 0%, #0f7f18 100%);
+		border-radius: 12px;
+		padding: 1.25rem 1.5rem;
+		margin-bottom: 1rem;
+		box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+		border: 1px solid rgba(0,0,0,0.06);
+	  }
+	  .bg-card h1, .bg-card p {
+		margin: 0;
+		color: var(--text-main);
 	  }
 
 	  html, body, [data-testid="stAppViewContainer"] {
@@ -175,24 +188,31 @@ def load_shap_values():
 # ----------------------------
 # Título principal
 # ----------------------------
-st.title("Dashboard de Modelo")
-st.write("Explora resultados, interpretabilidad y métricas del modelo.")
-
+st.markdown("""
+<div class="bg-card">
+    <h1>Dashboard; Posibles Oportunidades</h1>
+    <p>Explora resultados, interpretabilidad y métricas del modelo.</p>
+</div>
+""", unsafe_allow_html=True)
 
 # ----------------------------
 # Tabs principales
 # ----------------------------
-tab_user, tab_shap, tab_metrics = st.tabs([
-	"Resultados (User-Friendly)",
-	"Análisis Técnico (SHAP)",
-	"Validez del Modelo (Métricas)",
-])
-
-
+# ---- MENÚ LATERAL ----
+with st.sidebar:
+	st.title("Menú")
+	opcion = st.radio(
+		"Secciones",
+		(
+			"Resultados (User-Friendly)",
+			"Análisis Técnico (SHAP)",
+			"Validez del Modelo (Métricas)"
+		)
+	)
 # ----------------------------
 # Tab 1: Resultados (User-Friendly)
 # ----------------------------
-with tab_user:
+if opcion == "Resultados (User-Friendly)":
 	st.subheader("Impacto de variables por muestra")
 
 	missing = []
@@ -255,7 +275,7 @@ with tab_user:
 # ----------------------------
 # Tab 2: Análisis Técnico (SHAP)
 # ----------------------------
-with tab_shap:
+elif opcion == "Análisis Técnico (SHAP)":
 	st.subheader("Gráficos SHAP")
 
 	missing = []
@@ -288,7 +308,7 @@ with tab_shap:
 # ----------------------------
 # Tab 3: Validez del Modelo (Métricas)
 # ----------------------------
-with tab_metrics:
+elif opcion == "Validez del Modelo (Métricas)":
 	st.subheader("Métricas de Rendimiento")
 
 	df_metrics = load_metrics_df()
