@@ -6,7 +6,7 @@ import numpy as np
 
 # ⚠️ CONFIGURACIÓN DE API KEY
 # Opción 1: Coloca tu API key directamente aquí (más fácil pero menos seguro)
-GEMINI_API_KEY = "AIzaSyDP0Y5Bj2Y2fh7yhmnJuB92xXKuqXkoVx4"  # Reemplaza esto con tu API key real
+GEMINI_API_KEY = ":skull:"  # Reemplaza esto con tu API key real
 
 # Opción 2: Usar variable de entorno (más seguro)
 # Deja GEMINI_API_KEY = None y configura la variable de entorno en tu sistema
